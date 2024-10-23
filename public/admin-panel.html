@@ -42,7 +42,7 @@
       submissions.forEach(submission => {
         const listItem = document.createElement('li');
         listItem.innerHTML = `
-          <a href="${submission.link}" target="_blank">${submission.link}</a> - ${submission.hearts} ❤️
+          <a href="${submission.link}" target="_blank">${submission.link}</a> ${submission.hearts} ❤️
           <button onclick="removeSubmission('${submission.id}')">Remove</button>`;
         list.appendChild(listItem);
       });
