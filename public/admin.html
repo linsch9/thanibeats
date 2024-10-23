@@ -3,61 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel</title>
+  <title>Admin Login</title>
   <link rel="stylesheet" href="styles.css">
   <script>
-    let socket;
+    function checkPassword() {
+      const password = document.getElementById('admin-password').value;
+      const currentURL = window.location.origin;
+      const adminURL = `${currentURL}/admin?password=${password}`;
 
-    window.onload = () => {
-      const isLocalhost = window.location.hostname === 'localhost';
-      const wsProtocol = isLocalhost ? 'ws' : 'wss';
-      const wsPort = isLocalhost ? '3000' : window.location.port;
-      const wsUrl = `${wsProtocol}://${window.location.hostname}:${wsPort}`;
-
-      socket = new WebSocket(wsUrl);
-
-      socket.onmessage = event => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'updateSubmissions' || data.type === 'reset') {
-          updateSubmissionList(data.submissions || []);
-        }
-      };
-
-      document.getElementById('toggleVoting').onclick = () => {
-        socket.send(JSON.stringify({ type: 'toggleVoting' }));
-      };
-
-      document.getElementById('finalize').onclick = () => {
-        socket.send(JSON.stringify({ type: 'finalize' }));
-      };
-
-      document.getElementById('reset').onclick = () => {
-        socket.send(JSON.stringify({ type: 'reset' }));
-      };
-    };
-
-    function updateSubmissionList(submissions) {
-      const list = document.getElementById('submissions');
-      list.innerHTML = '';
-      submissions.forEach(submission => {
-        const listItem = document.createElement('li');
-        listItem.innerHTML = `
-          <a href="${submission.link}" target="_blank">${submission.link}</a> - ${submission.hearts} ❤️
-          <button onclick="removeSubmission('${submission.id}')">Remove</button>`;
-        list.appendChild(listItem);
-      });
-    }
-
-    function removeSubmission(id) {
-      socket.send(JSON.stringify({ type: 'removeSubmission', id }));
+      fetch(adminURL)
+              .then(response => {
+                if (response.ok) {
+                  response.text().then(html => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                  });
+                } else {
+                  alert('Passwort falsch.');
+                }
+              })
+              .catch(error => alert('Fehler beim Zugriff auf das Admin-Panel.'));
     }
   </script>
 </head>
-<body class="admin-panel">
-<h1>Matrix Kontroll Zentrum</h1>
-<button id="toggleVoting">Toggle Voting</button>
-<button id="finalize">Finalize Submissions</button>
-<button id="reset">Reset Contest</button>
-<ul id="submissions"></ul>
+<body>
+<div class="login-container">
+  <h1>Admin-Login</h1>
+  <div class="login-box">
+    <label for="admin-password"> </label>
+    <input type="password" id="admin-password" class="input-field">
+    <button onclick="checkPassword()" class="login-button">Login</button>
+  </div>
+</div>
 </body>
 </html>
