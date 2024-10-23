@@ -12,6 +12,8 @@
         let votingEnabled = false;
         let leaderboardVisible = false;
         let hasSubmitted = false;
+        let currentAudio = null;
+        let playbackState = {}; // Objekt zur Speicherung der Wiedergabezustände
 
         document.addEventListener('DOMContentLoaded', async () => {
             const baseResponse = await fetch('/base-url');
@@ -69,7 +71,7 @@
                 document.getElementById('login').style.display = 'none';
                 document.getElementById('logout').style.display = 'block';
                 hasSubmitted = data.hasSubmitted;
-                updateUI(); // Aktualisiere die UI hier
+                updateUI();
             } else {
                 document.getElementById('login').style.display = 'block';
             }
@@ -80,39 +82,73 @@
                 socket.send(JSON.stringify({ type: 'submit', link }));
                 document.getElementById('link').value = '';
                 hasSubmitted = true;
-                updateUI(); // Aktualisiere die UI hier
+                updateUI();
             };
         });
 
         function updateSubmissionList(submissions) {
             const list = document.getElementById('submissions');
+
+            // Speichern des aktuellen Wiedergabezustands
+            savePlaybackState();
+
             list.innerHTML = '';
+
             submissions.forEach((submission, index) => {
                 const listItem = document.createElement('li');
                 listItem.innerHTML = `
-            <div class="custom-audio-player">
-                <button class="play-button" onclick="togglePlayPause(this)">
-                    <img src="images/play.png" alt="Play">
-                </button>
-                <div class="progress-bar" onclick="seekAudio(event, this)">
-                    <div class="progress"></div>
-                </div>
-                <audio preload="true" ontimeupdate="updateProgress(this)">
-                    <source src="${submission.audio}" type="audio/mpeg">
-                </audio>
-            </div>
-            <button class="heart-button" ${!votingEnabled || userHearts <= 0 ? 'disabled' : ''} onclick="giveHeart(${index})">
-                ❤️ <span>${submission.hearts}</span>
-            </button>
-        `;
+                    <div class="custom-audio-player">
+                        <button class="play-button" onclick="togglePlayPause(this)">
+                            <img src="images/play.png" alt="Play">
+                        </button>
+                        <div class="progress-bar" onclick="seekAudio(event, this)">
+                            <div class="progress"></div>
+                        </div>
+                        <audio preload="true" ontimeupdate="updateProgress(this)">
+                            <source src="${submission.audio}" type="audio/mpeg">
+                        </audio>
+                    </div>
+                    <button class="heart-button" ${!votingEnabled || userHearts <= 0 ? 'disabled' : ''} onclick="giveHeart(${index})">
+                        ❤️ <span>${submission.hearts}</span>
+                    </button>
+                `;
                 list.appendChild(listItem);
             });
 
-            // Stelle sicher, dass die Herz-Buttons nach dem Hinzufügen zur DOM aktiviert werden
+            // Wiederherstellen des Wiedergabezustands
+            restorePlaybackState();
+
             updateUI();
         }
 
-        // Restlicher Code bleibt unverändert...
+        function savePlaybackState() {
+            playbackState = {}; // Zurücksetzen des vorherigen Zustands
+
+            const audios = document.querySelectorAll('audio');
+            audios.forEach(audio => {
+                const src = audio.querySelector('source').src;
+                playbackState[src] = {
+                    currentTime: audio.currentTime,
+                    playing: !audio.paused
+                };
+            });
+        }
+
+        function restorePlaybackState() {
+            const audios = document.querySelectorAll('audio');
+            audios.forEach(audio => {
+                const src = audio.querySelector('source').src;
+                if (playbackState[src]) {
+                    audio.currentTime = playbackState[src].currentTime;
+                    if (playbackState[src].playing) {
+                        audio.play();
+                        const playButton = audio.parentElement.querySelector('.play-button img');
+                        playButton.src = 'images/pause.png';
+                        playButton.alt = 'Pause';
+                    }
+                }
+            });
+        }
 
         function updateProgress(audio) {
             const progressBar = audio.parentElement.querySelector('.progress-bar');
@@ -142,6 +178,7 @@
                 img.src = 'images/play.png';
                 img.alt = 'Play';
             }
+            currentAudio = audio;
         }
 
         function giveHeart(index) {
