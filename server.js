@@ -11,6 +11,7 @@ const { parse } = require('url');
 const scdl = require('soundcloud-downloader').default;
 const fs = require('fs');
 const sanitize = require('sanitize-filename');
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 const server = http.createServer(app);
@@ -208,6 +209,6 @@ function broadcast(data) {
     });
 }
 
-server.listen(process.env.PORT || 10000, () => {
-    log('Server is listening on port 10000');
+server.listen(PORT, () => {
+    log(`Server is listening on port ${PORT}`);
 });
