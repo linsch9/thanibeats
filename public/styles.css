@@ -1,5 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Roboto', Arial, sans-serif;
     background-color: #f0f0f0;
     margin: 0 auto;
     max-width: 800px;
@@ -16,10 +19,10 @@ body::before {
     width: 100vw;
     height: 100vh;
     background-image: url('images/background.gif');
-    background-size: cover; /* Skaliert das Bild, um den gesamten Inhalt zu bedecken und Verhältnis beizubehalten */
+    background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    z-index: -1; /* Hintergrund-Z-Ordnung, sodass das Element nicht interaktiv ist */
+    z-index: -1;
 }
 
 h1 {
@@ -31,28 +34,34 @@ form, ul, h2, div, button {
     margin: 10px 0;
 }
 
-form {
-    background-color: #fff;
-    border: 1px solid #ccc;
+#submitForm {
+    background-color: #1b1b1b;
     padding: 15px;
-    border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 input[type="url"] {
     width: calc(100% - 110px);
     padding: 8px;
+    background-color: #1b1b1b;
     margin-right: 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
+    border: none;
     box-sizing: border-box;
 }
 
+input[placeholder], [placeholder], *[placeholder] {
+    color: white
+}
+
+textarea:focus, input:focus {
+    outline: none;
+}
+
 button {
-    background-color: #007BFF;
+    background-color: #2e2e2e;
     color: white;
     border: none;
-    padding: 10px 15px;
+    padding: 10px 25px;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
@@ -72,18 +81,16 @@ ul {
     padding: 0;
 }
 
-li {
-    background-color: #fff;
-    border: 1px solid #ccc;
+#submissions li {
+    background-color: #1b1b1b;
     padding: 10px;
     margin-bottom: 10px;
-    border-radius: 5px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-li a {
+#submissions li a {
     color: #007BFF;
     text-decoration: none;
     max-width: 70%;
@@ -92,30 +99,41 @@ li a {
     white-space: nowrap;
 }
 
-li a:hover {
+#submissions li a:hover {
     text-decoration: underline;
 }
 
-li span {
+#submissions li span {
     margin-left: 10px;
+    color: #ffffff; /* Setzt die Farbe des Zählers auf Weiß */
+}
+
+body.admin-panel #submissions li {
+    color: #ffffff !important; /* Stellt die Farbe des gesamten Textes auf Weiß */
+}
+
+body.admin-panel #submissions li span {
+    color: #ffffff !important; /* Setzt die Herzfarbe explizit auf Weiß */
+}
+
+body.admin-panel #submissions li a {
+    color: #ffffff !important; /* Setzt die Farbe des Links explizit auf Weiß */
 }
 
 #leaderboard {
-    background-color: #fff;
-    border: 1px solid #ccc;
+    background-color: #1b1b1b;
     padding: 15px;
-    border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: #ffffff; /* Setzt die Textfarbe innerhalb der Rangliste auf Weiß */
 }
 
-.heart-counter {
+#heartCounter {
     position: fixed;
     bottom: 20px;
     left: 20px;
-    background-color: #fff;
-    border: 1px solid #ccc;
+    background-color: #1b1b1b;
     padding: 10px;
-    border-radius: 5px;
+    color: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -123,11 +141,10 @@ li span {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background-color: #fff;
-    border: 1px solid #ccc;
+    background-color: #1b1b1b;
     height: 40px;
     padding: 10px;
-    border-radius: 5px;
+    color: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     text-align: center;
     align-items: center;
@@ -136,7 +153,8 @@ li span {
 #userName, #logout {
     margin-bottom: 5px;
     position: relative;
-    top: -14px;
+    color: #fff;
+    top: -18px;
 }
 
 #userName:last-child, #userName:last-child + #logout {
@@ -146,11 +164,13 @@ li span {
 #login {
     display: block;
     text-align: center;
+    width: 17%;
     margin: 20px auto;
-    background-color: #007BFF;
+    background-color: #232323;
     color: white;
-    padding: 10px 20px;
+    padding: 10px 0px;
     border: none;
+    position: relative;
     border-radius: 5px;
     text-decoration: none;
     cursor: pointer;
@@ -158,7 +178,7 @@ li span {
 }
 
 #login:hover {
-    background-color: #0056b3;
+    background-color: #8600ff;
 }
 
 .custom-audio-player {
@@ -206,19 +226,21 @@ li span {
     word-wrap: break-word;
     word-break: break-all;
     white-space: normal;
-    display: block; /* Block-Level-Element für Zeilenumbruch */
+    display: block;
     margin-bottom: 5px;
-    color: #2a6ebb; /* Farbe für den Link */
+    color: #2a6ebb;
 }
+
 .submission-details {
     display: flex;
     justify-content: space-between;
-    font-size: 14px; /* Kleinere Schriftgröße für Details */
+    font-size: 14px;
 }
+
 .leaderboard-item {
     margin-bottom: 15px;
     padding: 10px;
-    border-bottom: 1px solid #ccc; /* Trennlinie zwischen Einträgen */
+    border-bottom: 1px solid #ccc;
 }
 
 .centered {
@@ -231,15 +253,42 @@ li span {
 /* Bereits vorhandene Styles bleiben unverändert */
 
 .play-button {
-    background-color: transparent; /* Transparent setzen */
-    border: none; /* Keine Randlinien */
+    background-color: transparent;
+    border: none;
     cursor: pointer;
-    outline: none; /* Keine Umrandung beim Klick */
-    padding: 0; /* Kein Innenabstand */
+    outline: none;
+    padding: 0;
 }
 
 .play-button img {
-    width: 40px; /* Setze die Breite der Bilder */
-    height: 40px; /* Setze die Höhe der Bilder */
-    display: block; /* Bild als Block-Element - verhindert unerwünschte Leerzeichen */
+    width: 40px;
+    height: 40px;
+    display: block;
+}
+
+.heart-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #2e2e2e;
+    color: white;
+    border: none;
+    padding: 10px 10px;
+    margin-right: 7px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.heart-button:hover {
+    background-color: #0056b3;
+}
+
+.heart-button:disabled {
+    background-color: #ff0000;
+    cursor: not-allowed;
+}
+
+.heart-button span {
+    margin-left: 5px;
+    color: #ffffff; /* Farbe des Zählers auf Weiß setzen */
 }
