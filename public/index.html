@@ -15,6 +15,13 @@
         let votingEnabled = false;
         let leaderboardVisible = false;
 
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginButton = document.getElementById('login-button');
+            if (loginButton) {
+                loginButton.href = `${window.location.origin}/auth/discord`;
+            }
+        });
+
         window.onload = () => {
             socket = new WebSocket('ws://localhost:3000');
             socket.onmessage = event => {
@@ -201,7 +208,7 @@
 <body>
 <h1>THANI EPIC BEAT BATTLE</h1>
 <div class="center-login">
-    <a id="login" href="https://thanibeats.onrender.com:10000/auth/discord">Login with Discord</a>
+    <a id="login" href="http://localhost:3000/auth/discord">Login with Discord</a>
 </div>
 <div class="user-info-container">
     <p id="userName" style="display: none;"></p>
