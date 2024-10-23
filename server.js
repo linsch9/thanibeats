@@ -16,14 +16,25 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ noServer: true });
+const adminPassword = 'hiphop';
 
 let submissions = [];
 let votingEnabled = false;
 let leaderboardVisible = false;
 let userHearts = {};
+let userHasSubmitted = {};
 
 function log(message) {
     console.log(`[INFO] ${message}`);
+}
+
+function checkAdminPassword(req, res, next) {
+    const password = req.query.password;
+    if (password === adminPassword) {
+        next();
+    } else {
+        res.status(403).send('Forbidden: Invalid password');
+    }
 }
 
 passport.serializeUser((user, done) => done(null, user));
@@ -43,6 +54,14 @@ const sessionParser = session({
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false } // Set this to true if using HTTPS
+});
+
+app.get('/admin-panel.html', (req, res) => {
+    res.redirect('/admin.html');
+});
+
+app.get('/admin', checkAdminPassword, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin-panel.html'));
 });
 
 app.use(sessionParser);
@@ -108,7 +127,12 @@ wss.on('connection', (ws) => {
 
     // Send current status to newly connected client
     if (ws.user) {
-        ws.send(JSON.stringify({ type: 'user', user: ws.user, hearts: userHearts[ws.userId] }));
+        // Initialize `hasSubmitted` for the connected user if not already set
+        if (userHasSubmitted[ws.userId] === undefined) {
+            userHasSubmitted[ws.userId] = false;
+        }
+
+        ws.send(JSON.stringify({ type: 'user', user: ws.user, hearts: userHearts[ws.userId], hasSubmitted: userHasSubmitted[ws.userId] }));
         ws.send(JSON.stringify({ type: 'initHearts', hearts: userHearts[ws.userId] }));
         ws.send(JSON.stringify({ type: 'updateSubmissions', submissions }));
         ws.send(JSON.stringify({ type: 'toggleVoting', votingEnabled }));
@@ -129,6 +153,14 @@ wss.on('connection', (ws) => {
 
             if (data.type === 'submit' && !votingEnabled && ws.user) {
                 const soundcloudUrl = data.link;
+
+                // Prevent user from submitting more than once
+                if (userHasSubmitted[ws.userId]) {
+                    ws.send(JSON.stringify({ type: 'error', message: 'You have already submitted a song.' }));
+                    return;
+                }
+
+                userHasSubmitted[ws.userId] = true;
 
                 // Retrieve track info from SoundCloud
                 let trackInfo;
@@ -196,15 +228,20 @@ wss.on('connection', (ws) => {
                 submissions = [];
                 votingEnabled = false;
                 leaderboardVisible = false;
-                userHearts = {}; // Reset user hearts
+                userHearts = {};  // Reset user hearts
+                userHasSubmitted = {};  // Reset user submissions
                 broadcast({ type: 'reset' });
             }
 
             if (data.type === 'removeSubmission') {
+                log(`Processing removeSubmission for ID: ${data.id}`);
                 const index = submissions.findIndex(s => s.id === data.id);
                 if (index >= 0) {
+                    log(`Found submission at index ${index}, removing it.`);
                     submissions.splice(index, 1);
                     broadcast({ type: 'updateSubmissions', submissions });
+                } else {
+                    log(`Submission with ID '${data.id}' not found.`);
                 }
             }
         } catch (error) {
