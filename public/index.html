@@ -11,6 +11,7 @@
         let user = null;
         let votingEnabled = false;
         let leaderboardVisible = false;
+        let hasSubmitted = false;
 
         document.addEventListener('DOMContentLoaded', async () => {
             const baseResponse = await fetch('/base-url');
@@ -41,11 +42,12 @@
                 } else if (data.type === 'user') {
                     user = data.user;
                     userHearts = data.hearts;
+                    hasSubmitted = data.hasSubmitted;
                     document.getElementById('userName').textContent = user.username;
                     document.getElementById('userName').style.display = 'block';
                     document.getElementById('login').style.display = 'none';
                     document.getElementById('logout').style.display = 'block';
-                    updateUI();
+                    updateUI(); // UI direkt nach dem Auslesen der Benutzerdaten aktualisieren
                 } else if (data.type === 'updateHearts') {
                     userHearts = data.hearts;
                     updateHeartCounter();
@@ -54,34 +56,29 @@
                     updateHeartCounter();
                 }
                 updateHeartCounter();
-                updateUI(); // Füge dies hinzu, um sicherzustellen, dass die UI nach jeder Nachricht aktualisiert wird
             };
 
-            fetch('/user')
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        document.getElementById('login').style.display = 'block';
-                    }
-                })
-                .then(data => {
-                    if (data) {
-                        user = data;
-                        document.getElementById('userName').textContent = user.username;
-                        document.getElementById('userName').style.display = 'block';
-                        document.getElementById('login').style.display = 'none';
-                        document.getElementById('logout').style.display = 'block';
-                        updateUI();
-                    }
-                });
+            const userResponse = await fetch('/user');
+            if (userResponse.ok) {
+                const data = await userResponse.json();
+                user = data;
+                document.getElementById('userName').textContent = user.username;
+                document.getElementById('userName').style.display = 'block';
+                document.getElementById('login').style.display = 'none';
+                document.getElementById('logout').style.display = 'block';
+                hasSubmitted = data.hasSubmitted;
+                updateUI(); // Aktualisiere die UI hier
+            } else {
+                document.getElementById('login').style.display = 'block';
+            }
 
             document.getElementById('submitForm').onsubmit = event => {
                 event.preventDefault();
                 const link = document.getElementById('link').value;
-                console.log('Submitting link:', link); // Debug log
                 socket.send(JSON.stringify({ type: 'submit', link }));
                 document.getElementById('link').value = '';
+                hasSubmitted = true;
+                updateUI(); // Aktualisiere die UI hier
             };
         });
 
@@ -155,11 +152,25 @@
 
         function updateUI() {
             const isSubmittingPhase = !votingEnabled && !leaderboardVisible;
-            document.getElementById('submitForm').style.display = isSubmittingPhase ? 'block' : 'none';
+            const submitForm = document.getElementById('submitForm');
+            const thankYouMessage = document.getElementById('thankYouMessage');
+
+            if (isSubmittingPhase) {
+                if (hasSubmitted) {
+                    submitForm.style.display = 'none';
+                    thankYouMessage.style.display = 'block';
+                } else {
+                    submitForm.style.display = 'block';
+                    thankYouMessage.style.display = 'none';
+                }
+            } else {
+                submitForm.style.display = 'none';
+                thankYouMessage.style.display = 'none';
+            }
+
             document.getElementById('submissions').style.display = votingEnabled ? 'block' : 'none';
             document.getElementById('heartCounter').style.display = votingEnabled ? 'block' : 'none';
 
-            // Wenn die Abstimmung aktiviert ist, aktiviere die Herz-Buttons
             const heartButtons = document.querySelectorAll('.heart-button');
             heartButtons.forEach(button => {
                 button.disabled = !votingEnabled || userHearts <= 0;
@@ -234,7 +245,8 @@
     <input type="url" id="link" placeholder="SoundCloud Link" required>
     <button type="submit">Submit</button>
 </form>
-<ul id="submissions" style="display:none;"></ul>
+<p id="thankYouMessage" style="display: none;">Thank you for submitting!</p>
+<ul id="submissions" style="display: none;"></ul>
 <div id="leaderboard" style="display:none;"></div>
 <div id="heartCounter" class="heart-counter">Herzen übrig: 0</div>
 </body>
