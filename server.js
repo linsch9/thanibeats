@@ -152,6 +152,7 @@ wss.on('connection', (ws) => {
                 }));
 
                 submissions.push({
+                    id: sanitizedTitle, // It will be used to identify the submission for removal
                     link: soundcloudUrl,
                     hearts: 0,
                     user: ws.user,
@@ -164,12 +165,12 @@ wss.on('connection', (ws) => {
             if (data.type === 'toggleVoting') {
                 votingEnabled = !votingEnabled;
                 if (votingEnabled) {
-                    // Set hearts for all users to 10 when voting starts
                     Object.keys(userHearts).forEach(userId => {
                         userHearts[userId] = 10;
                     });
                 }
                 broadcast({ type: 'toggleVoting', votingEnabled });
+                broadcast({ type: 'initHearts', hearts: userHearts[ws.userId] });
             }
 
             if (data.type === 'heart' && votingEnabled && !leaderboardVisible) {
@@ -198,6 +199,14 @@ wss.on('connection', (ws) => {
                 userHearts = {}; // Reset user hearts
                 broadcast({ type: 'reset' });
             }
+
+            if (data.type === 'removeSubmission') {
+                const index = submissions.findIndex(s => s.id === data.id);
+                if (index >= 0) {
+                    submissions.splice(index, 1);
+                    broadcast({ type: 'updateSubmissions', submissions });
+                }
+            }
         } catch (error) {
             log(`Error processing message: ${error}`);
         }
@@ -205,8 +214,8 @@ wss.on('connection', (ws) => {
 });
 
 function broadcast(data) {
-    log('Broadcasting data');
-    log(JSON.stringify(data));
+    console.log('Broadcasting data');
+    console.log(JSON.stringify(data));
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(data));
