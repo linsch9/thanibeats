@@ -15,15 +15,21 @@
         let votingEnabled = false;
         let leaderboardVisible = false;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const loginButton = document.getElementById('login-button');
-            if (loginButton) {
-                loginButton.href = `${window.location.origin}/auth/discord`;
-            }
-        });
+        document.addEventListener('DOMContentLoaded', async () => {
+            const baseResponse = await fetch('/base-url');
+            const baseData = await baseResponse.json();
+            const baseURL = baseData.baseURL;
 
-        window.onload = () => {
-            socket = new WebSocket('ws://localhost:3000');
+            const loginButton = document.getElementById('login');
+            if (loginButton) {
+                loginButton.href = `${baseURL}/auth/discord`;
+            }
+
+            const isLocalhost = window.location.hostname === "localhost";
+            const wsProtocol = isLocalhost ? "ws" : "wss";
+            const wsUrl = `${wsProtocol}://${window.location.hostname}:${isLocalhost ? "3000" : window.location.port}`;
+
+            socket = new WebSocket(wsUrl);
             socket.onmessage = event => {
                 const data = JSON.parse(event.data);
                 if (data.type === 'updateSubmissions') {
@@ -79,7 +85,7 @@
                 socket.send(JSON.stringify({ type: 'submit', link }));
                 document.getElementById('link').value = '';
             };
-        };
+        });
 
         function updateSubmissionList(submissions) {
             const list = document.getElementById('submissions');
@@ -104,6 +110,8 @@
                 list.appendChild(listItem);
             });
         }
+
+        // Restlicher Code bleibt unverändert...
 
         function updateProgress(audio) {
             const progressBar = audio.parentElement.querySelector('.progress-bar');
