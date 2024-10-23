@@ -9,7 +9,15 @@
     let socket;
 
     window.onload = () => {
-      socket = new WebSocket('ws://localhost:3000');
+      // Bestimme, ob wir uns lokal oder in der Produktionsumgebung befinden
+      const isLocalhost = window.location.hostname === 'localhost';
+      const wsProtocol = isLocalhost ? 'ws' : 'wss';
+      const wsPort = isLocalhost ? '3000' : window.location.port;
+      const wsUrl = `${wsProtocol}://${window.location.hostname}:${wsPort}`;
+
+      // Initialisiere WebSocket basierend auf der dynamischen URL
+      socket = new WebSocket(wsUrl);
+
       socket.onmessage = event => {
         const data = JSON.parse(event.data);
         if (data.type === 'updateSubmissions' || data.type === 'reset') {
