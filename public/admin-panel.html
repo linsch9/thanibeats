@@ -1,253 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Panel</title>
-    <link rel="stylesheet" href="styles.css">
-    <script>
-        let socket;
-        let userHearts = 0;
-        let user = null;
-        let votingEnabled = false;
-        let leaderboardVisible = false;
-        let hasSubmitted = false;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    let socket;
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const baseResponse = await fetch('/base-url');
-            const baseData = await baseResponse.json();
-            const baseURL = baseData.baseURL;
+    window.onload = () => {
+      const isLocalhost = window.location.hostname === 'localhost';
+      const wsProtocol = isLocalhost ? 'ws' : 'wss';
+      const wsPort = isLocalhost ? '3000' : window.location.port;
+      const wsUrl = `${wsProtocol}://${window.location.hostname}:${wsPort}`;
 
-            const loginButton = document.getElementById('login');
-            if (loginButton) {
-                loginButton.href = `${baseURL}/auth/discord`;
-            }
+      socket = new WebSocket(wsUrl);
 
-            const isLocalhost = window.location.hostname === "localhost";
-            const wsProtocol = isLocalhost ? "ws" : "wss";
-            const wsUrl = `${wsProtocol}://${window.location.hostname}:${isLocalhost ? "3000" : window.location.port}`;
-
-            socket = new WebSocket(wsUrl);
-            socket.onmessage = event => {
-                const data = JSON.parse(event.data);
-                if (data.type === 'updateSubmissions') {
-                    updateSubmissionList(data.submissions || []);
-                } else if (data.type === 'toggleVoting') {
-                    votingEnabled = data.votingEnabled;
-                    updateUI();
-                } else if (data.type === 'showLeaderboard') {
-                    leaderboardVisible = true;
-                    showLeaderboard(data.submissions);
-                    updateUI();
-                } else if (data.type === 'user') {
-                    user = data.user;
-                    userHearts = data.hearts;
-                    hasSubmitted = data.hasSubmitted;
-                    document.getElementById('userName').textContent = user.username;
-                    document.getElementById('userName').style.display = 'block';
-                    document.getElementById('login').style.display = 'none';
-                    document.getElementById('logout').style.display = 'block';
-                    updateUI(); // UI direkt nach dem Auslesen der Benutzerdaten aktualisieren
-                } else if (data.type === 'updateHearts') {
-                    userHearts = data.hearts;
-                    updateHeartCounter();
-                } else if (data.type === 'initHearts') {
-                    userHearts = data.hearts;
-                    updateHeartCounter();
-                }
-                updateHeartCounter();
-            };
-
-            const userResponse = await fetch('/user');
-            if (userResponse.ok) {
-                const data = await userResponse.json();
-                user = data;
-                document.getElementById('userName').textContent = user.username;
-                document.getElementById('userName').style.display = 'block';
-                document.getElementById('login').style.display = 'none';
-                document.getElementById('logout').style.display = 'block';
-                hasSubmitted = data.hasSubmitted;
-                updateUI(); // Aktualisiere die UI hier
-            } else {
-                document.getElementById('login').style.display = 'block';
-            }
-
-            document.getElementById('submitForm').onsubmit = event => {
-                event.preventDefault();
-                const link = document.getElementById('link').value;
-                socket.send(JSON.stringify({ type: 'submit', link }));
-                document.getElementById('link').value = '';
-                hasSubmitted = true;
-                updateUI(); // Aktualisiere die UI hier
-            };
-        });
-
-        function updateSubmissionList(submissions) {
-            const list = document.getElementById('submissions');
-            list.innerHTML = '';
-            submissions.forEach((submission, index) => {
-                const listItem = document.createElement('li');
-                listItem.innerHTML = `
-            <div class="custom-audio-player">
-                <button class="play-button" onclick="togglePlayPause(this)">
-                    <img src="images/play.png" alt="Play">
-                </button>
-                <div class="progress-bar" onclick="seekAudio(event, this)">
-                    <div class="progress"></div>
-                </div>
-                <audio preload="true" ontimeupdate="updateProgress(this)">
-                    <source src="${submission.audio}" type="audio/mpeg">
-                </audio>
-            </div>
-            <button class="heart-button" ${!votingEnabled || userHearts <= 0 ? 'disabled' : ''} onclick="giveHeart(${index})">
-                ❤️ <span>${submission.hearts}</span>
-            </button>
-        `;
-                list.appendChild(listItem);
-            });
-
-            // Stelle sicher, dass die Herz-Buttons nach dem Hinzufügen zur DOM aktiviert werden
-            updateUI();
+      socket.onmessage = event => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'updateSubmissions' || data.type === 'reset') {
+          updateSubmissionList(data.submissions || []);
         }
+      };
 
-        // Restlicher Code bleibt unverändert...
+      document.getElementById('toggleVoting').onclick = () => {
+        socket.send(JSON.stringify({ type: 'toggleVoting' }));
+      };
 
-        function updateProgress(audio) {
-            const progressBar = audio.parentElement.querySelector('.progress-bar');
-            const progress = progressBar.querySelector('.progress');
-            const value = (audio.currentTime / audio.duration) * 100;
-            progress.style.width = `${value}%`;
-        }
+      document.getElementById('finalize').onclick = () => {
+        socket.send(JSON.stringify({ type: 'finalize' }));
+      };
 
-        function seekAudio(event, progressBar) {
-            const audio = progressBar.parentElement.querySelector('audio');
-            const rect = progressBar.getBoundingClientRect();
-            const offsetX = event.clientX - rect.left;
-            const percentage = offsetX / rect.width;
-            const timeToSeek = percentage * audio.duration;
-            audio.currentTime = timeToSeek;
-        }
+      document.getElementById('reset').onclick = () => {
+        socket.send(JSON.stringify({ type: 'reset' }));
+      };
+    };
 
-        function togglePlayPause(button) {
-            const audio = button.parentElement.querySelector('audio');
-            const img = button.querySelector('img');
-            if (audio.paused) {
-                audio.play();
-                img.src = 'images/pause.png';
-                img.alt = 'Pause';
-            } else {
-                audio.pause();
-                img.src = 'images/play.png';
-                img.alt = 'Play';
-            }
-        }
+    function updateSubmissionList(submissions) {
+      const list = document.getElementById('submissions');
+      list.innerHTML = '';
+      submissions.forEach(submission => {
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `
+          <a href="${submission.link}" target="_blank">${submission.link}</a> - ${submission.hearts} ❤️
+          <button onclick="removeSubmission('${submission.id}')">Remove</button>`;
+        list.appendChild(listItem);
+      });
+    }
 
-        function giveHeart(index) {
-            if (userHearts > 0) {
-                socket.send(JSON.stringify({ type: 'heart', index }));
-                userHearts--; // Deduct a heart locally
-                updateHeartCounter(); // Update the UI
-            }
-        }
-
-        function updateUI() {
-            const isSubmittingPhase = !votingEnabled && !leaderboardVisible;
-            const submitForm = document.getElementById('submitForm');
-            const thankYouMessage = document.getElementById('thankYouMessage');
-
-            if (isSubmittingPhase) {
-                if (hasSubmitted) {
-                    submitForm.style.display = 'none';
-                    thankYouMessage.style.display = 'block';
-                } else {
-                    submitForm.style.display = 'block';
-                    thankYouMessage.style.display = 'none';
-                }
-            } else {
-                submitForm.style.display = 'none';
-                thankYouMessage.style.display = 'none';
-            }
-
-            document.getElementById('submissions').style.display = votingEnabled ? 'block' : 'none';
-            document.getElementById('heartCounter').style.display = votingEnabled ? 'block' : 'none';
-
-            const heartButtons = document.querySelectorAll('.heart-button');
-            heartButtons.forEach(button => {
-                button.disabled = !votingEnabled || userHearts <= 0;
-            });
-        }
-
-        function showLeaderboard(submissions) {
-            const leaderboard = document.getElementById('leaderboard');
-            leaderboard.innerHTML = '<h2>Leaderboard</h2>';
-            submissions.sort((a, b) => b.hearts - a.hearts).forEach(submission => {
-                const item = document.createElement('div');
-                item.className = 'leaderboard-item';
-
-                // Use the updated getSoundCloudEmbedUrl function
-                const soundCloudEmbedUrl = getSoundCloudEmbedUrl(submission.link, submission.trackId);
-
-                item.innerHTML = `
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                        src="${soundCloudEmbedUrl}"></iframe>
-                    <div class="submission-details">
-                        <span>${submission.hearts} ❤️</span>
-                        <span>${submission.user.username}</span>
-                    </div>
-                `;
-                leaderboard.appendChild(item);
-            });
-            leaderboard.style.display = 'block';
-            document.getElementById('submissions').style.display = 'none';
-            document.getElementById('heartCounter').style.display = 'none';
-        }
-
-        function getSoundCloudEmbedUrl(link, trackId) {
-            console.log('Getting embed URL for link:', link); // Debug log
-            // Check if the link is for a private track
-            let embedUrl;
-            const privateTrackRegex = /soundcloud\.com\/([\w-]+)\/([\w-]+)\/s-([\w-]+)/;
-            const match = link.match(privateTrackRegex);
-
-            if (match) {
-                // If it's a private track, construct the embed URL accordingly
-                const token = `s-${match[3]}`;
-                const url = `https://api.soundcloud.com/tracks/${trackId}?secret_token=${token}`;
-                embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url).replace(/%3A/g, ':').replace(/%2F/g, '/')}&color=%231b1b1b&inverse=false&auto_play=false&show_user=true`;
-            } else {
-                // Otherwise, use the standard embedding format
-                embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(link)}&color=%231b1b1b&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`;
-            }
-
-            // Log the final embed URL for debugging purposes
-            console.log('Embed URL:', embedUrl);
-
-            return embedUrl;
-        }
-
-        function updateHeartCounter() {
-            document.getElementById('heartCounter').textContent = `❤️  ${userHearts}`;
-        }
-
-    </script>
+    function removeSubmission(id) {
+      console.log('Removing submission with ID:', id); // Debug-Ausgabe
+      socket.send(JSON.stringify({ type: 'removeSubmission', id }));
+    }
+  </script>
 </head>
-
-<body>
-<h1>THANI EPIC BEAT BATTLE</h1>
-<div class="center-login">
-    <a id="login" href="#">Login with Discord</a>
-</div>
-<div class="user-info-container">
-    <p id="userName" style="display: none;"></p>
-    <a id="logout" href="/logout" style="display: none;">logout</a>
-</div>
-<form id="submitForm" style="display: none;">
-    <input type="url" id="link" placeholder="SoundCloud Link" required>
-    <button type="submit">Submit</button>
-</form>
-<p id="thankYouMessage" style="display: none;">Thank you for submitting!</p>
-<ul id="submissions" style="display: none;"></ul>
-<div id="leaderboard" style="display:none;"></div>
-<div id="heartCounter" class="heart-counter">Herzen übrig: 0</div>
+<body class="admin-panel">
+<h1>Matrix Kontroll Zentrum</h1>
+<button id="toggleVoting">Toggle Voting</button>
+<button id="finalize">Finalize Submissions</button>
+<button id="reset">Reset Contest</button>
+<ul id="submissions"></ul>
 </body>
 </html>
