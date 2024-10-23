@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Panel</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        /* Füge Inline-Stile hier hinzu, falls erforderlich. */
-    </style>
     <script>
         let socket;
         let userHearts = 0;
@@ -57,6 +54,7 @@
                     updateHeartCounter();
                 }
                 updateHeartCounter();
+                updateUI(); // Füge dies hinzu, um sicherzustellen, dass die UI nach jeder Nachricht aktualisiert wird
             };
 
             fetch('/user')
@@ -93,22 +91,26 @@
             submissions.forEach((submission, index) => {
                 const listItem = document.createElement('li');
                 listItem.innerHTML = `
-                    <div class="custom-audio-player">
-                        <button class="play-button" onclick="togglePlayPause(this)">
-                            <img src="images/play.png" alt="Play">
-                        </button>
-                        <div class="progress-bar" onclick="seekAudio(event, this)">
-                            <div class="progress"></div>
-                        </div>
-                        <audio preload="true" ontimeupdate="updateProgress(this)">
-                            <source src="${submission.audio}" type="audio/mpeg">
-                        </audio>
-                    </div>
-                    <button ${userHearts <= 0 ? 'disabled' : ''} onclick="giveHeart(${index})">❤️</button>
-                    <span>${submission.hearts}</span>
-                `;
+            <div class="custom-audio-player">
+                <button class="play-button" onclick="togglePlayPause(this)">
+                    <img src="images/play.png" alt="Play">
+                </button>
+                <div class="progress-bar" onclick="seekAudio(event, this)">
+                    <div class="progress"></div>
+                </div>
+                <audio preload="true" ontimeupdate="updateProgress(this)">
+                    <source src="${submission.audio}" type="audio/mpeg">
+                </audio>
+            </div>
+            <button class="heart-button" ${!votingEnabled || userHearts <= 0 ? 'disabled' : ''} onclick="giveHeart(${index})">
+                ❤️ <span>${submission.hearts}</span>
+            </button>
+        `;
                 list.appendChild(listItem);
             });
+
+            // Stelle sicher, dass die Herz-Buttons nach dem Hinzufügen zur DOM aktiviert werden
+            updateUI();
         }
 
         // Restlicher Code bleibt unverändert...
@@ -156,6 +158,12 @@
             document.getElementById('submitForm').style.display = isSubmittingPhase ? 'block' : 'none';
             document.getElementById('submissions').style.display = votingEnabled ? 'block' : 'none';
             document.getElementById('heartCounter').style.display = votingEnabled ? 'block' : 'none';
+
+            // Wenn die Abstimmung aktiviert ist, aktiviere die Herz-Buttons
+            const heartButtons = document.querySelectorAll('.heart-button');
+            heartButtons.forEach(button => {
+                button.disabled = !votingEnabled || userHearts <= 0;
+            });
         }
 
         function showLeaderboard(submissions) {
@@ -194,10 +202,10 @@
                 // If it's a private track, construct the embed URL accordingly
                 const token = `s-${match[3]}`;
                 const url = `https://api.soundcloud.com/tracks/${trackId}?secret_token=${token}`;
-                embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url).replace(/%3A/g, ':').replace(/%2F/g, '/')}&color=%237c7c7c&inverse=false&auto_play=false&show_user=true`;
+                embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url).replace(/%3A/g, ':').replace(/%2F/g, '/')}&color=%231b1b1b&inverse=false&auto_play=false&show_user=true`;
             } else {
                 // Otherwise, use the standard embedding format
-                embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(link)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`;
+                embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(link)}&color=%231b1b1b&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`;
             }
 
             // Log the final embed URL for debugging purposes
@@ -207,7 +215,7 @@
         }
 
         function updateHeartCounter() {
-            document.getElementById('heartCounter').textContent = `Herzen übrig: ${userHearts}`;
+            document.getElementById('heartCounter').textContent = `❤️  ${userHearts}`;
         }
 
     </script>
@@ -220,7 +228,7 @@
 </div>
 <div class="user-info-container">
     <p id="userName" style="display: none;"></p>
-    <a id="logout" href="/logout" style="display: none;">Logout</a>
+    <a id="logout" href="/logout" style="display: none;">logout</a>
 </div>
 <form id="submitForm" style="display: none;">
     <input type="url" id="link" placeholder="SoundCloud Link" required>
