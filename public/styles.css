@@ -1,0 +1,245 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0 auto;
+    max-width: 800px;
+    padding: 20px;
+    position: relative;
+    box-sizing: border-box;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('images/background.gif');
+    background-size: cover; /* Skaliert das Bild, um den gesamten Inhalt zu bedecken und Verhältnis beizubehalten */
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: -1; /* Hintergrund-Z-Ordnung, sodass das Element nicht interaktiv ist */
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+form, ul, h2, div, button {
+    margin: 10px 0;
+}
+
+form {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+input[type="url"] {
+    width: calc(100% - 110px);
+    padding: 8px;
+    margin-right: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+li a {
+    color: #007BFF;
+    text-decoration: none;
+    max-width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+li a:hover {
+    text-decoration: underline;
+}
+
+li span {
+    margin-left: 10px;
+}
+
+#leaderboard {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.heart-counter {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-info-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    height: 40px;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    align-items: center;
+}
+
+#userName, #logout {
+    margin-bottom: 5px;
+    position: relative;
+    top: -14px;
+}
+
+#userName:last-child, #userName:last-child + #logout {
+    margin-bottom: 0;
+}
+
+#login {
+    display: block;
+    text-align: center;
+    margin: 20px auto;
+    background-color: #007BFF;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#login:hover {
+    background-color: #0056b3;
+}
+
+.custom-audio-player {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-right: 10px;
+}
+
+.play-button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.play-button:hover {
+    background-color: #0056b3;
+}
+
+.progress-bar {
+    width: 95%;
+    margin: 1%;
+    height: 20px;
+    background-color: #ccc;
+    border-radius: 5px;
+    position: relative;
+    cursor: pointer;
+}
+
+.progress {
+    height: 20px;
+    width: 100%;
+    background-color: #007BFF;
+    border-radius: 5px;
+    position: relative;
+    transition: width 0.3s ease;
+    top: -10px;
+}
+
+.submission-link {
+    word-wrap: break-word;
+    word-break: break-all;
+    white-space: normal;
+    display: block; /* Block-Level-Element für Zeilenumbruch */
+    margin-bottom: 5px;
+    color: #2a6ebb; /* Farbe für den Link */
+}
+.submission-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px; /* Kleinere Schriftgröße für Details */
+}
+.leaderboard-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-bottom: 1px solid #ccc; /* Trennlinie zwischen Einträgen */
+}
+
+.centered {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Bereits vorhandene Styles bleiben unverändert */
+
+.play-button {
+    background-color: transparent; /* Transparent setzen */
+    border: none; /* Keine Randlinien */
+    cursor: pointer;
+    outline: none; /* Keine Umrandung beim Klick */
+    padding: 0; /* Kein Innenabstand */
+}
+
+.play-button img {
+    width: 40px; /* Setze die Breite der Bilder */
+    height: 40px; /* Setze die Höhe der Bilder */
+    display: block; /* Bild als Block-Element - verhindert unerwünschte Leerzeichen */
+}

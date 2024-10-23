@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="styles.css"> <!-- Hinzufügen des CSS-Dateipfads -->
+  <script>
+    let socket;
+
+    window.onload = () => {
+      socket = new WebSocket('ws://localhost:3000');
+      socket.onmessage = event => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'updateSubmissions' || data.type === 'reset') {
+          updateSubmissionList(data.submissions || []);
+        }
+      };
+
+      document.getElementById('toggleVoting').onclick = () => {
+        socket.send(JSON.stringify({ type: 'toggleVoting' }));
+      };
+
+      document.getElementById('finalize').onclick = () => {
+        socket.send(JSON.stringify({ type: 'finalize' }));
+      };
+
+      document.getElementById('reset').onclick = () => {
+        socket.send(JSON.stringify({ type: 'reset' }));
+      };
+    };
+
+    function updateSubmissionList(submissions) {
+      const list = document.getElementById('submissions');
+      list.innerHTML = '';
+      submissions.forEach(submission => {
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `<a href="${submission.link}" target="_blank">${submission.link}</a> - ${submission.hearts} ❤️`;
+        list.appendChild(listItem);
+      });
+    }
+  </script>
+</head>
+<body>
+<h1>Matrix Kontroll Zentrum</h1>
+<button id="toggleVoting">Toggle Voting</button>
+<button id="finalize">Finalize Submissions</button>
+<button id="reset">Reset Contest</button>
+<ul id="submissions"></ul>
+</body>
+</html>
