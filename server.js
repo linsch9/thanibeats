@@ -56,6 +56,11 @@ app.get('/callback',
     (req, res) => { res.redirect('/'); }
 );
 
+app.get('/base-url', (req, res) => {
+    const baseURL = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
+    res.json({ baseURL });
+});
+
 app.get('/logout', (req, res, next) => {
     req.logout(err => {
         if (err) { return next(err); }
