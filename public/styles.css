@@ -1,3 +1,4 @@
+/* Allgemeine Styles und Importe */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
 body {
@@ -103,26 +104,26 @@ ul {
 
 #submissions li span {
     margin-left: 10px;
-    color: #ffffff; /* Setzt die Farbe des Zählers auf Weiß */
+    color: #ffffff;
 }
 
 body.admin-panel #submissions li {
-    color: #ffffff !important; /* Stellt die Farbe des gesamten Textes auf Weiß */
+    color: #ffffff !important;
 }
 
 body.admin-panel #submissions li span {
-    color: #ffffff !important; /* Setzt die Herzfarbe explizit auf Weiß */
+    color: #ffffff !important;
 }
 
 body.admin-panel #submissions li a {
-    color: #ffffff !important; /* Setzt die Farbe des Links explizit auf Weiß */
+    color: #ffffff !important;
 }
 
 #leaderboard {
     background-color: #1b1b1b;
     padding: 15px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    color: #ffffff; /* Setzt die Textfarbe innerhalb der Rangliste auf Weiß */
+    color: #ffffff;
 }
 
 #heartCounter {
@@ -247,8 +248,6 @@ body.admin-panel #submissions li a {
     transform: translate(-50%, -50%);
 }
 
-/* Bereits vorhandene Styles bleiben unverändert */
-
 .play-button {
     background-color: transparent;
     border: none;
@@ -277,23 +276,22 @@ body.admin-panel #submissions li a {
 }
 
 .header-container {
-    background-color: #252525; /* Schwarze Box */
-    padding: 10px; /* Innenabstand */
-    text-align: center; /* Zentriert den Text innerhalb der Box */
+    background-color: #252525;
+    padding: 10px;
+    text-align: center;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    width: 50%; /* Festgelegte Breite */
-    margin: 0 auto; /* Horizontales Zentrieren */
+    width: 50%;
+    margin: 0 auto;
     position: relative;
 }
 
 .header-container h1 {
-    color: #fff; /* Weißer Text */
-    margin: 0; /* Kein Außenabstand */
+    color: #fff;
+    margin: 0;
 }
 
-
 input[type="password"] {
-    width: calc(100% - 24px); /* Abzug vom Innenabstand */
+    width: calc(100% - 24px);
     padding: 10px;
     margin-bottom: 20px;
     border: 1px solid #ddd;
@@ -340,25 +338,183 @@ input[type="password"] {
     padding: 15px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     color: white;
-    text-align: center; /* Text in der Mitte zentrieren */
+    text-align: center;
 }
 
 .heart-button span {
     margin-left: 5px;
-    color: #ffffff; /* Farbe des Zählers auf Weiß setzen */
+    color: #ffffff;
 }
 
-/* Neue Styles für Admin Panel */
 .button-container {
     display: flex;
-    justify-content: center; /* Horizontal zentrieren */
-    align-items: center; /* Vertikal zentrieren */
-    flex-direction: row; /* Horizontal anordnen */
-    gap: 10px; /* Abstand zwischen den Buttons */
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    gap: 10px;
 }
 
 .button-container button {
-    border: none; /* Kein Rahmen */
-    border-radius: 0; /* Ecken auf 0 setzen */
+    border: none;
+    border-radius: 0;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+.bracket-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.round {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin: 0 10px;
+}
+
+.match {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: #1b1b1b;
+    margin: 10px;
+    padding: 10px;
+    /* Entfernt runde Ecken */
+    border-radius: 0px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 5px;
+}
+
+.avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+.info p {
+    margin: 0;
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.info .hearts {
+    display: inline;
+    font-size: 12px;
+    color: #ff0000;
+}
+
+.info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.team img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.team::after {
+    content: " ";
+    display: table;
+    clear: both;
+}
+
+.team p {
+    margin: 0;
+}
+
+.team .info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.bracket-container h1 {
+    font-size: 24px;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.match img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+.match .info p {
+    color: #fff;
+    text-align: center;
+    padding: 0;
+}
+
+#draw-container {
+    margin-top: 20px;
+    background-color: #1b1b1b;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: white;
+    text-align: center;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Zentrieren des Canvas horizontal */
+    justify-content: center; /* Zentrieren des Canvas vertikal */
+    position: relative;
+}
+
+#draw-container canvas {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+    z-index: 1; /* Stellen Sie sicher, dass das Zeichenfeld nicht das Bracket verdeckt */
+}
+
+/* Entfernt margin-top für colorPicker und penSize */
+#colorPicker, #penSize {
+    margin-top: 0;
+}
+
+#colorPicker {
+    border: none;
+    background-color: #303030;
+}
+
+/* Fügt eine gemeinsame Styling-Klasse für Abstände hinzu */
+.tool-button {
+    margin: 0 5px;
+}
+
+/* Container für die Tool-Leiste */
+.tool-container {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    z-index: 2; /* Sicherstellen, dass es über anderen Inhalten liegt */
+    display: flex;
+    align-items: center;
+}
+
+/* Absolute Positionierung des clearButton */
+#clearButton {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 2; /* Sicherstellen, dass es über anderen Inhalten liegt */
 }
