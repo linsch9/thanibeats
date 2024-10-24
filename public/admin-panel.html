@@ -18,8 +18,16 @@
 
       socket.onmessage = event => {
         const data = JSON.parse(event.data);
+
+        if (data.type === 'redirect') {
+          window.location.href = data.url;
+        }
+
         if (data.type === 'updateSubmissions' || data.type === 'reset') {
           updateSubmissionList(data.submissions || []);
+        } else if (data.type === 'bracket') {
+          // Hier das Turnier-Bracket zeichnen
+          displayBracket(data.bracket);
         }
       };
 
@@ -31,6 +39,10 @@
         socket.send(JSON.stringify({ type: 'finalize' }));
       };
 
+      document.getElementById('createBracket').onclick = () => {
+        socket.send(JSON.stringify({ type: 'overrideLeaderboard', nextAction: 'createBracket' }));
+      };
+
       document.getElementById('reset').onclick = () => {
         socket.send(JSON.stringify({ type: 'reset' }));
       };
@@ -38,12 +50,13 @@
 
     function updateSubmissionList(submissions) {
       const list = document.getElementById('submissions');
-      ul.innerHTML = '';
+      list.innerHTML = ''; // Aktuelle Liste leeren
+
       submissions.forEach(submission => {
         const listItem = document.createElement('li');
         listItem.innerHTML = `
-          <a href="${submission.link}" target="_blank">${submission.link}</a> ${submission.hearts} ❤️
-          <button onclick="removeSubmission('${submission.id}')">Remove</button>`;
+            <a href="${submission.link}" target="_blank">${submission.link}</a> ${submission.hearts} ❤️
+            <button onclick="removeSubmission('${submission.id}')">Remove</button>`;
         list.appendChild(listItem);
       });
     }
@@ -61,6 +74,7 @@
 <div class="button-container">
   <button id="toggleVoting">Toggle Voting</button>
   <button id="finalize">Finalize Submissions</button>
+  <button id="createBracket">Create Bracket</button>
   <button id="reset">Reset Contest</button>
 </div>
 <ul id="submissions"></ul>
