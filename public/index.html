@@ -32,6 +32,11 @@
             socket = new WebSocket(wsUrl);
             socket.onmessage = event => {
                 const data = JSON.parse(event.data);
+
+                if (data.type === 'redirect') {
+                    window.location.href = data.url;
+                }
+
                 if (data.type === 'updateSubmissions') {
                     updateSubmissionList(data.submissions || []);
                 } else if (data.type === 'toggleVoting') {
@@ -287,6 +292,6 @@
 <p id="thankYouMessage" style="display: none;">Thank you for submitting!</p>
 <ul id="submissions" style="display: none;"></ul>
 <div id="leaderboard" style="display:none;"></div>
-<div id="heartCounter" class="heart-counter">Herzen übrig: 0</div>
+<div id="heartCounter" class="heart-counter">❤️: 0</div>
 </body>
 </html>
