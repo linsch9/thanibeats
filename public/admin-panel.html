@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device=ul, initial-scale=1.0">
   <title>Admin Panel</title>
   <link rel="stylesheet" href="styles.css">
   <script>
@@ -38,7 +38,7 @@
 
     function updateSubmissionList(submissions) {
       const list = document.getElementById('submissions');
-      list.innerHTML = '';
+      ul.innerHTML = '';
       submissions.forEach(submission => {
         const listItem = document.createElement('li');
         listItem.innerHTML = `
@@ -55,10 +55,14 @@
   </script>
 </head>
 <body class="admin-panel">
-<h1>Matrix Kontroll Zentrum</h1>
-<button id="toggleVoting">Toggle Voting</button>
-<button id="finalize">Finalize Submissions</button>
-<button id="reset">Reset Contest</button>
+<div class="header-container">
+  <h1>Matrix Kontroll Zentrum</h1>
+</div>
+<div class="button-container">
+  <button id="toggleVoting">Toggle Voting</button>
+  <button id="finalize">Finalize Submissions</button>
+  <button id="reset">Reset Contest</button>
+</div>
 <ul id="submissions"></ul>
 </body>
 </html>
