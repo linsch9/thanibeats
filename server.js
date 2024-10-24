@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
+const socketIo = require('socket.io');
 const path = require('path');
 const session = require('express-session');
 const passport = require('passport');
@@ -13,8 +14,12 @@ const fs = require('fs');
 const sanitize = require('sanitize-filename');
 const PORT = process.env.PORT || 3000;
 
+// Bracket size from the environment variable, default to 8 if not set
+const BRACKET_SIZE = parseInt(process.env.BRACKET_SIZE, 10) || 8;
+
 const app = express();
 const server = http.createServer(app);
+const io = socketIo(server);
 const wss = new WebSocket.Server({ noServer: true });
 const adminPassword = 'hiphop';
 
@@ -23,6 +28,7 @@ let votingEnabled = false;
 let leaderboardVisible = false;
 let userHearts = {};
 let userHasSubmitted = {};
+let drawData = null; // Neue Zeichnungsdaten Variable
 
 function log(message) {
     console.log(`[INFO] ${message}`);
@@ -44,7 +50,7 @@ passport.use(new DiscordStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     callbackURL: process.env.CALLBACK_URL,
-    scope: ['identify']
+    scope: ['identify', 'email', 'guilds', 'guilds.join']
 }, (accessToken, refreshToken, profile, done) => {
     process.nextTick(() => done(null, profile));
 }));
@@ -89,7 +95,11 @@ app.get('/logout', (req, res, next) => {
 
 app.get('/user', (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send();
-    res.json(req.user);
+    res.json({
+        id: req.user.id,
+        username: req.user.username,
+        avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`
+    });
 });
 
 // Ensure upload directory exists
@@ -127,15 +137,12 @@ wss.on('connection', (ws) => {
 
     // Send current status to newly connected client
     if (ws.user) {
-        // Initialize `hasSubmitted` for the connected user if not already set
-        if (userHasSubmitted[ws.userId] === undefined) {
-            userHasSubmitted[ws.userId] = false;
-        }
-
-        ws.send(JSON.stringify({ type: 'user', user: ws.user, hearts: userHearts[ws.userId], hasSubmitted: userHasSubmitted[ws.userId] }));
-        ws.send(JSON.stringify({ type: 'initHearts', hearts: userHearts[ws.userId] }));
+        ws.send(JSON.stringify({ type: 'user', user: ws.user, hearts: userHearts[ws.user.id], hasSubmitted: userHasSubmitted[ws.user.id] }));
         ws.send(JSON.stringify({ type: 'updateSubmissions', submissions }));
-        ws.send(JSON.stringify({ type: 'toggleVoting', votingEnabled }));
+
+        if (votingEnabled) {
+            ws.send(JSON.stringify({ type: 'toggleVoting', votingEnabled }));
+        }
         if (leaderboardVisible) {
             ws.send(JSON.stringify({ type: 'showLeaderboard', submissions }));
         }
@@ -146,8 +153,20 @@ wss.on('connection', (ws) => {
             const data = JSON.parse(message);
             log(`Received message: ${message}`);
 
-            if (leaderboardVisible && data.type !== 'reset') {
+            if (leaderboardVisible && data.type !== 'reset' && data.type !== 'overrideLeaderboard') {
                 log('Leaderboard is visible, ignoring further actions.');
+                return;
+            }
+
+            if (data.type === 'createBracket') {
+                processCreateBracket();
+                return;
+            }
+
+            if (data.type === 'requestBracket') {
+                // Send the current bracket status
+                const bracket = generateCurrentBracket();
+                ws.send(JSON.stringify({ type: 'bracket', bracket }));
                 return;
             }
 
@@ -233,6 +252,16 @@ wss.on('connection', (ws) => {
                 broadcast({ type: 'reset' });
             }
 
+            if (data.type === 'overrideLeaderboard') {
+                leaderboardVisible = false;
+                log('Leaderboard visibility overridden to false.');
+                // Directly process createBracket if the next message is createBracket
+                if (data.nextAction === 'createBracket') {
+                    processCreateBracket();
+                }
+                return;
+            }
+
             if (data.type === 'removeSubmission') {
                 log(`Processing removeSubmission for ID: ${data.id}`);
                 const index = submissions.findIndex(s => s.id === data.id);
@@ -250,6 +279,31 @@ wss.on('connection', (ws) => {
     });
 });
 
+io.on('connection', (socket) => {
+    console.log('Ein Benutzer hat sich verbunden');
+
+    socket.on('join', (room) => {
+        socket.join(room);
+        if (drawData) {
+            socket.emit('drawData', drawData);
+        }
+    });
+
+    socket.on('drawData', (data) => {
+        drawData = data;
+        socket.broadcast.to('drawRoom').emit('drawData', data);
+    });
+
+    socket.on('clearCanvas', () => {
+        drawData = null;
+        socket.broadcast.to('drawRoom').emit('clearCanvas');
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Benutzer hat die Verbindung getrennt');
+    });
+});
+
 function broadcast(data) {
     console.log('Broadcasting data');
     console.log(JSON.stringify(data));
@@ -263,3 +317,55 @@ function broadcast(data) {
 server.listen(PORT, () => {
     log(`Server is listening on port ${PORT}`);
 });
+
+function processCreateBracket() {
+    leaderboardVisible = false;
+    log('Creating bracket, leaderboard visibility set to false');
+
+    // Sort top submissions by hearts and take the top entries equal to the bracket size
+    const topSubmissions = [...submissions].sort((a, b) => b.hearts - a.hearts).slice(0, BRACKET_SIZE);
+
+    // Ensure we have at least the required number of entries, adding bye entries if needed
+    while (topSubmissions.length < BRACKET_SIZE) {
+        topSubmissions.push({ user: { username: ' ' }, hearts: 0 });
+    }
+
+    // Shuffle the submissions
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+    shuffle(topSubmissions);
+
+    // Create pairs of submissions for the bracket
+    const bracket = [];
+    for (let i = 0; i < BRACKET_SIZE; i += 2) {
+        bracket.push([topSubmissions[i], topSubmissions[i + 1]]);
+    }
+
+    log('Top Submissions for Bracket:', JSON.stringify(topSubmissions));
+    broadcast({ type: 'bracket', bracket });
+
+    // Redirect all users
+    broadcast({ type: 'redirect', url: 'bracket.html' });
+}
+
+function generateCurrentBracket() {
+    // Sort submissions by hearts and take the top entries equal to the bracket size
+    const topSubmissions = [...submissions].sort((a, b) => b.hearts - a.hearts).slice(0, BRACKET_SIZE);
+
+    // Ensure we have at least the required number of entries, adding bye entries if needed
+    while (topSubmissions.length < BRACKET_SIZE) {
+        topSubmissions.push({ user: { username: ' ' }, hearts: 0 });
+    }
+
+    // Initialize the bracket
+    const bracket = [];
+    for (let i = 0; i < BRACKET_SIZE / 2; i++) {
+        bracket.push([topSubmissions[i * 2], topSubmissions[i * 2 + 1]]);
+    }
+
+    return bracket;
+}
