@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Turnier Bracket</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<h1>Turnier Bracket</h1>
+<div id="bracket" class="bracket-container"></div>
+
+<!-- Zeichenwerkzeug Bereich -->
+<div id="draw-container">
+  <canvas id="draw-canvas" width="800" height="400"></canvas>
+  <br/>
+  <div class="tool-container">
+    <input type="color" id="colorPicker" class="tool-button" value="#fff">
+    <input type="range" id="penSize" min="1" max="10" class="tool-button">
+  </div>
+  <div class="button-container">
+    <button id="clearButton">Erase</button>
+    <button id="downloadButton">Download PNG</button>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    let socket;
+    const socketIoUrl = `${window.location.protocol}//${window.location.host}`;
+    socket = io(socketIoUrl);
+
+    // WebSocket Initialisierung für Bracket
+    const wsUrl = `${window.location.protocol.replace('http', 'ws')}//${window.location.host}`;
+
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log("WebSocket verbunden");
+      ws.send(JSON.stringify({ type: 'requestBracket' }));
+    };
+
+    ws.onmessage = event => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'bracket') {
+        displayBracket(data.bracket);
+      }
+    };
+
+    function displayBracket(bracket) {
+      const bracketDiv = document.getElementById('bracket');
+      bracketDiv.innerHTML = '';
+
+      if (bracket.length === 0) {
+        bracketDiv.innerHTML = '<p>Noch keine Einsendungen, um ein Bracket zu erstellen!</p>';
+        return;
+      }
+
+      const roundDiv = document.createElement('div');
+      roundDiv.classList.add('round');
+
+      bracket.forEach(match => {
+        const matchDiv = document.createElement('div');
+        matchDiv.classList.add('match');
+
+        matchDiv.innerHTML = `
+          <div class="team">
+            <img src="${match[0].user && match[0].user.avatar ? `https://cdn.discordapp.com/avatars/${match[0].user.id}/${match[0].user.avatar}.png` : 'placeholder-avatar.png'}" alt=" " class="avatar">
+            <div class="info">
+              <p>${match[0].user ? match[0].user.username : ' '}</p>
+              <p>❤️ ${match[0].hearts}</p>
+            </div>
+          </div>
+          <div class="team">
+            <img src="${match[1].user && match[1].user.avatar ? `https://cdn.discordapp.com/avatars/${match[1].user.id}/${match[1].user.avatar}.png` : 'placeholder-avatar.png'}" alt=" " class="avatar">
+            <div class="info">
+              <p>${match[1].user ? match[1].user.username : ' '}</p>
+              <p>❤️ ${match[1].hearts}</p>
+            </div>
+          </div>
+        `;
+
+        roundDiv.appendChild(matchDiv);
+      });
+
+      bracketDiv.appendChild(roundDiv);
+    }
+
+    // Initiale Einstellungen für Fabric.js-Zeichenfläche
+    const canvas = new fabric.Canvas('draw-canvas');
+    const colorPicker = document.getElementById('colorPicker');
+    const penSize = document.getElementById('penSize');
+    const eraserButton = document.getElementById('clearButton');
+    const downloadButton = document.getElementById('downloadButton');
+    let isEraserActive = false;
+
+    canvas.isDrawingMode = true;
+    canvas.freeDrawingBrush.color = colorPicker.value;
+    canvas.freeDrawingBrush.width = parseInt(penSize.value, 10);
+
+    socket.emit('join', 'drawRoom');
+
+    colorPicker.addEventListener('change', () => {
+      if (!isEraserActive) {
+        canvas.freeDrawingBrush.color = colorPicker.value;
+      }
+    });
+
+    penSize.addEventListener('change', () => {
+      canvas.freeDrawingBrush.width = parseInt(penSize.value, 10);
+
+      if (isEraserActive) {
+        changeEraser(penSize.value);
+      }
+    });
+
+    function changeEraser(size) {
+      canvas.forEachObject(function(obj) {
+        if (obj) {
+          obj.selectionLineWidth = size;
+          obj.selectionBorderColor = 'rgba(255, 255, 255, 1)';
+        }
+      });
+    }
+
+    eraserButton.addEventListener('click', () => {
+      isEraserActive = !isEraserActive;
+      if (isEraserActive) {
+        canvas.isDrawingMode = false;
+        canvas.defaultCursor = 'pointer';
+
+        canvas.forEachObject(function(obj) {
+          obj.selectable = false;
+        });
+
+        // Aktivierendes Event für das Markieren und Entfernen
+        canvas.on('mouse:down', handleErase);
+        eraserButton.textContent = 'Draw';
+      } else {
+        canvas.isDrawingMode = true;
+        canvas.defaultCursor = 'crosshair';
+
+        canvas.forEachObject(function(obj) {
+          obj.selectable = true;
+        });
+
+        // Deaktivieren der Entfernungshandhabung
+        canvas.off('mouse:down', handleErase);
+        eraserButton.textContent = 'Erase';
+      }
+    });
+
+    function handleErase(event) {
+      const pointer = canvas.getPointer(event.e);
+      const objects = canvas.getObjects();
+      for (let i = 0; i < objects.length; i++) {
+        if (objects[i].containsPoint(pointer)) {
+          canvas.remove(objects[i]);
+          canvas.requestRenderAll();
+          socket.emit('drawData', JSON.stringify(canvas));
+          break;
+        }
+      }
+    }
+
+    socket.on('drawData', (data) => {
+      const jsonData = JSON.parse(data);
+      canvas.loadFromJSON(jsonData, () => {
+        canvas.renderAll.bind(canvas);
+      });
+    });
+
+    canvas.on('mouse:up', () => {
+      if(!isEraserActive) {
+        socket.emit('drawData', JSON.stringify(canvas));
+      }
+    });
+
+    socket.on('clearCanvas', () => {
+      canvas.clear();
+      socket.emit('drawData', JSON.stringify(canvas));
+    });
+
+    downloadButton.addEventListener('click', () => {
+      const dataURL = canvas.toDataURL({
+        format: 'png',
+        quality: 1.0
+      });
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = 'canvas.png';
+      link.click();
+    });
+  });
+</script>
+</body>
+</html>
